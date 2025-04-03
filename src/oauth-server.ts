@@ -1,23 +1,24 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
+import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 3001;
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-const CLIENT_ID = process.env.CLICKUP_CLIENT_ID!;
-const CLIENT_SECRET = process.env.CLICKUP_CLIENT_SECRET!;
-const REDIRECT_URI = process.env.CLICKUP_REDIRECT_URI!;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI;
 
-// ✅ Endpoint para trocar o código por um access_token
-app.post("/auth/token", async (req, res) => {
-  const { code } = req.body;
-  if (!code) return res.status(400).json({ error: "Authorization code is required" });
+app.get("/callback", async (req, res) => {
+  const code = req.query.code;
+
+  if (!code) {
+    return res.status(400).send("Código de autorização ausente.");
+  }
 
   try {
     const response = await fetch("https://api.clickup.com/api/v2/oauth/token", {
@@ -32,27 +33,73 @@ app.post("/auth/token", async (req, res) => {
     });
 
     const data = await response.json();
+
     if (data.access_token) {
-      res.status(200).json(data);
+      const redirectUrl = `${process.env.FRONTEND_URL}?code=${code}`;
+      res.redirect(redirectUrl);
     } else {
-      res.status(400).json({ error: "Failed to get token", details: data });
+      res.status(500).json({ error: "Erro ao obter token", details: data });
     }
-  } catch (error) {
-    res.status(500).json({ error: "Server error", details: error });
+  } catch (err) {
+    console.error("Erro no callback:", err);
+    res.status(500).json({ error: "Erro no servidor de autenticação." });
   }
 });
 
-// ✅ Novo endpoint para redirecionamento do ClickUp após login
-app.get("/callback", (req, res) => {
-  const code = req.query.code;
-  if (!code) {
-    return res.status(400).send("Código de autorização não fornecido.");
-  }
+app.post("/auth/token", async (req, res) => {
+  const { code } = req.body;
 
-  res.redirect(`http://localhost:5173/?code=${code}`);
+  try {
+    const response = await fetch("https://api.clickup.com/api/v2/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        redirect_uri: REDIRECT_URI,
+      }),
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Erro ao trocar código por token:", err);
+    res.status(500).json({ error: "Erro ao trocar código por token." });
+  }
 });
 
-// ✅ ESSA LINHA É O QUE FALTAVA:
+// ✅ Novo endpoint proxy para contornar CORS
+app.get("/api/team", async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Token de autenticação ausente ou inválido." });
+  }
+
+  const accessToken = authHeader.replace("Bearer ", "");
+
+  try {
+    const response = await fetch("https://api.clickup.com/api/v2/team", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).send(errorText);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Erro ao buscar dados da API do ClickUp:", err);
+    res.status(500).json({ error: "Erro interno no servidor proxy." });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ OAuth server running on port ${PORT}`);
+  console.log(`OAuth server rodando em http://localhost:${PORT}`);
 });
