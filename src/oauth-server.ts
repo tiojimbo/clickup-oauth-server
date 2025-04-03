@@ -12,8 +12,10 @@ app.use(express.json());
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
-app.get("/callback", async (req, res) => {
+// ✅ Rota de redirecionamento padrão (substitui /callback)
+app.get("/", async (req, res) => {
   const code = req.query.code;
 
   if (!code) {
@@ -35,17 +37,18 @@ app.get("/callback", async (req, res) => {
     const data = await response.json();
 
     if (data.access_token) {
-      const redirectUrl = `${process.env.FRONTEND_URL}?code=${code}`;
+      const redirectUrl = `${FRONTEND_URL}?code=${code}`;
       res.redirect(redirectUrl);
     } else {
       res.status(500).json({ error: "Erro ao obter token", details: data });
     }
   } catch (err) {
-    console.error("Erro no callback:", err);
+    console.error("Erro no redirecionamento inicial:", err);
     res.status(500).json({ error: "Erro no servidor de autenticação." });
   }
 });
 
+// ✅ Rota POST para troca de code por token (usada pelo frontend)
 app.post("/auth/token", async (req, res) => {
   const { code } = req.body;
 
@@ -69,7 +72,7 @@ app.post("/auth/token", async (req, res) => {
   }
 });
 
-// ✅ Novo endpoint proxy para contornar CORS
+// ✅ Rota proxy para contornar CORS e retornar equipes
 app.get("/api/team", async (req, res) => {
   const authHeader = req.headers.authorization;
 
