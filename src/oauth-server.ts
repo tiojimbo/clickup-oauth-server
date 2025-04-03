@@ -22,6 +22,12 @@ app.get("/", async (req, res) => {
     return res.status(400).send("Código de autorização ausente.");
   }
 
+  // ✅ Logs de verificação
+  console.log("CLIENT_ID:", CLIENT_ID);
+  console.log("CLIENT_SECRET:", CLIENT_SECRET);
+  console.log("REDIRECT_URI:", REDIRECT_URI);
+  console.log("CODE:", code);
+
   try {
     const response = await fetch("https://api.clickup.com/api/v2/oauth/token", {
       method: "POST",
@@ -47,6 +53,7 @@ app.get("/", async (req, res) => {
     res.status(500).json({ error: "Erro no servidor de autenticação." });
   }
 });
+
 
 // ✅ Rota POST para troca de code por token (usada pelo frontend)
 app.post("/auth/token", async (req, res) => {
