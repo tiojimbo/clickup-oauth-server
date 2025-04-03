@@ -3,9 +3,9 @@
     "version": "1.0.0",
     "main": "dist/oauth-server.js",
     "scripts": {
-      "dev": "ts-node src/oauth-server.ts",
-      "build": "tsc",
-      "start": "node dist/oauth-server.js"
+      "build": "tsc" ,
+      "start": "node dist/oauth-server.js",
+      "dev": "ts-node --project tsconfig.server.json src/oauth-server.ts"
     },
     "dependencies": {
       "cors": "^2.8.5",
