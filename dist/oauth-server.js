@@ -49,6 +49,9 @@ app.get("/callback", (req, res) => {
     if (!code) {
         return res.status(400).send("Código de autorização não fornecido.");
     }
-    // Redireciona para o painel da extensão com o código
     res.redirect(`http://localhost:5173/?code=${code}`);
+});
+// ✅ ESSA LINHA É O QUE FALTAVA:
+app.listen(PORT, () => {
+    console.log(`✅ OAuth server running on port ${PORT}`);
 });
