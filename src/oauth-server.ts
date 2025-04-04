@@ -43,28 +43,28 @@ app.get("/callback", async (req, res) => {
 
 // Endpoint para buscar spaces de um time (proxy da API do ClickUp para evitar CORS)
 app.get("/api/spaces", async (req, res) => {
-  const { team_id } = req.query;
-  const access_token = req.headers.authorization;
+  const teamId = req.query.team_id as string;
+  const token = req.headers.authorization;
 
-  if (!team_id || !access_token) {
-    return res.status(400).json({ error: "Parâmetros obrigatórios ausentes (team_id ou access_token)" });
+  if (!teamId || !token) {
+    return res.status(400).json({ error: "team_id e token são obrigatórios" });
   }
 
   try {
-    const response = await fetch(`https://api.clickup.com/api/v2/team/${team_id}/space`, {
+    const response = await fetch(`https://api.clickup.com/api/v2/team/${teamId}/space`, {
       headers: {
-        Authorization: access_token,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     const data = await response.json();
-    console.log("📦 [BACKEND] Resposta da API /team/:team_id/space:", JSON.stringify(data, null, 2));
-    return res.json(data);
-  } catch (error) {
-    console.error("❌ [BACKEND] Erro ao buscar spaces:", error);
-    return res.status(500).json({ error: "Erro ao buscar spaces" });
+    res.json({ spaces: data.spaces || [] });
+  } catch (err) {
+    console.error("Erro ao buscar espaços:", err);
+    res.status(500).json({ error: "Erro ao buscar espaços" });
   }
 });
+
 
 app.listen(port, () => {
   console.log(`🚀 Servidor OAuth2 rodando em http://localhost:${port}`);
