@@ -8,12 +8,14 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (_, res) => {
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
+app.get("/", (_req, res) => {
   res.send("Servidor OAuth do ClickUp está no ar ✅");
 });
 
 app.post("/auth/token", async (req, res) => {
-  const code = req.body.code;
+  const { code } = req.body;
   if (!code) return res.status(400).json({ error: "Código não fornecido" });
 
   try {
@@ -52,13 +54,59 @@ app.get("/api/spaces", async (req, res) => {
     });
 
     const data = await response.json();
-
-    console.log("✅ [BACKEND] Spaces recebidos da ClickUp:", data?.spaces); // LOG ÚTIL
-
-    res.json({ spaces: data.spaces }); // 🔥 ESSA LINHA FOI O QUE FALTAVA
+    console.log("✅ [BACKEND] Spaces recebidos da ClickUp:", data.spaces);
+    res.json({ spaces: data.spaces });
   } catch (error) {
     console.error("❌ Erro ao buscar spaces:", error);
     res.status(500).json({ error: "Erro ao buscar spaces", details: error });
+  }
+});
+
+app.get("/api/folders", async (req, res) => {
+  const spaceId = req.query.space_id as string;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!spaceId || !token) {
+    return res.status(400).json({ error: "space_id e token são obrigatórios" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/space/${spaceId}/folder`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    console.log("📁 [BACKEND] Folders recebidos:", data.folders);
+    res.json({ folders: data.folders });
+  } catch (error) {
+    console.error("❌ Erro ao buscar folders:", error);
+    res.status(500).json({ error: "Erro ao buscar folders", details: error });
+  }
+});
+
+app.get("/api/lists", async (req, res) => {
+  const folderId = req.query.folder_id as string;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!folderId || !token) {
+    return res.status(400).json({ error: "folder_id e token são obrigatórios" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/folder/${folderId}/list`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    console.log("📄 [BACKEND] Lists recebidas:", data.lists);
+    res.json({ lists: data.lists });
+  } catch (error) {
+    console.error("❌ Erro ao buscar lists:", error);
+    res.status(500).json({ error: "Erro ao buscar lists", details: error });
   }
 });
 
