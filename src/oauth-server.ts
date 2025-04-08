@@ -145,6 +145,34 @@ app.get("/api/tasks/:listId", async (req, res) => {
   }
 });
 
+app.get("/api/task-types", async (req, res) => {
+  const teamId = req.query.team_id as string;
+  const token = req.headers.authorization;
+
+  if (!teamId || !token) {
+    return res.status(400).json({ error: "team_id e token são obrigatórios" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/team/${teamId}/task_type`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar tipos de tarefa");
+    }
+
+    const data = await response.json();
+    return res.json(data);
+  } catch (error) {
+    console.error("Erro no endpoint /api/task-types:", error);
+    return res.status(500).json({ error: "Erro ao buscar tipos de tarefa" });
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
