@@ -34,6 +34,7 @@ app.post("/auth/token", async (req, res) => {
     });
 
     const data = await response.json();
+    console.log("📦 Dados da ClickUp:", JSON.stringify(data, null, 2));
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: "Erro ao obter token", details: error });
@@ -115,6 +116,8 @@ app.get("/api/lists", async (req, res) => {
 app.get("/api/tasks/:listId", async (req, res) => {
   const listId = req.params.listId;
   const accessToken = req.headers.authorization;
+
+  console.log("🔑 Token recebido:", accessToken);
 
   if (!accessToken) {
     return res.status(401).json({ error: "Token não fornecido" });
