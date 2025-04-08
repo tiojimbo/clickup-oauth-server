@@ -112,9 +112,41 @@ app.get("/api/lists", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor OAuth rodando na porta ${PORT}`);
+app.get("/api/tasks/:listId", async (req, res) => {
+  const listId = req.params.listId;
+  const accessToken = req.headers.authorization;
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.clickup.com/api/v2/list/${listId}/task?include_task_type=true`,
+      {
+        headers: {
+          Authorization: accessToken,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar tarefas");
+    }
+
+    const data = await response.json();
+    return res.json(data.tasks);
+  } catch (error) {
+    console.error("Erro no endpoint /api/tasks/:listId:", error);
+    return res.status(500).json({ error: "Erro ao buscar tarefas" });
+  }
 });
+
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
+
 
 app.get("/api/tasks", async (req, res) => {
   const listId = req.query.list_id as string;
