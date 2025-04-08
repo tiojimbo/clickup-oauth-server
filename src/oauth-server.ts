@@ -138,7 +138,7 @@ app.get("/api/tasks/:listId", async (req, res) => {
     }
 
     const data = await response.json();
-    return res.json(data.tasks);
+    return res.json(data);
   } catch (error) {
     console.error("Erro no endpoint /api/tasks/:listId:", error);
     return res.status(500).json({ error: "Erro ao buscar tarefas" });
