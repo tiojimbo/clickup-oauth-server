@@ -115,3 +115,27 @@ app.get("/api/lists", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor OAuth rodando na porta ${PORT}`);
 });
+
+app.get("/api/tasks", async (req, res) => {
+  const listId = req.query.list_id as string;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!listId || !token) {
+    return res.status(400).json({ error: "list_id e token são obrigatórios" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/list/${listId}/task`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    console.log("🧩 [BACKEND] Tarefas recebidas da ClickUp:", data.tasks);
+    res.json({ tasks: data.tasks });
+  } catch (error) {
+    console.error("❌ Erro ao buscar tarefas:", error);
+    res.status(500).json({ error: "Erro ao buscar tarefas", details: error });
+  }
+});
