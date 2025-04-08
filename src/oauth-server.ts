@@ -153,11 +153,11 @@ app.get("/api/task-types", async (req, res) => {
     return res.status(400).json({ error: "Token e team_id são obrigatórios" });
   }
 
-  try {
-    console.log("🔍 Buscando task types com:");
-    console.log("🔑 Token:", accessToken);
-    console.log("🆔 Team ID:", teamId);
+  console.log("🔍 Procurando task types com:");
+  console.log("🔑 Token:", accessToken);
+  console.log("🆔 ID da equipe:", teamId);
 
+  try {
     const response = await fetch(
       `https://api.clickup.com/api/v2/team/${teamId}/task_type`,
       {
@@ -167,11 +167,14 @@ app.get("/api/task-types", async (req, res) => {
       }
     );
 
+    const raw = await response.text(); // pega conteúdo bruto
+    console.log("📦 Resposta bruta da API:", raw);
+
     if (!response.ok) {
       throw new Error("Erro ao buscar tipos de tarefa");
     }
 
-    const data = await response.json();
+    const data = JSON.parse(raw);
     return res.json(data);
   } catch (error) {
     console.error("❌ Erro no endpoint /api/task-types:", error);
