@@ -145,43 +145,34 @@ app.get("/api/tasks/:listId", async (req, res) => {
   }
 });
 
-app.get("/api/task-types", async (req, res) => {
-  const teamId = req.query.team_id as string;
-  const accessToken = req.headers.authorization;
+app.get("/api/task-types/:teamId", async (req, res) => {
+  const teamId = req.params.teamId;
+  const token = req.headers.authorization;
 
-  if (!accessToken || !teamId) {
-    return res.status(400).json({ error: "Token e team_id são obrigatórios" });
+  if (!token) {
+    return res.status(401).json({ error: "Token não fornecido" });
   }
-
-  console.log("🔍 Procurando task types com:");
-  console.log("🔑 Token:", accessToken);
-  console.log("🆔 ID da equipe:", teamId);
 
   try {
-    const response = await fetch(
-      `https://api.clickup.com/api/v2/team/${teamId}/task_type`,
-      {
-        headers: {
-          Authorization: accessToken,
-        },
-      }
-    );
-
-    const raw = await response.text(); // pega conteúdo bruto
-    console.log("📦 Resposta bruta da API:", raw);
+    const response = await fetch(`https://api.clickup.com/api/v2/team/${teamId}/task_type`, {
+      headers: {
+        Authorization: token,
+      },
+    });
 
     if (!response.ok) {
-      throw new Error("Erro ao buscar tipos de tarefa");
+      const errorText = await response.text();
+      throw new Error(`Erro ${response.status}: ${errorText}`);
     }
 
-    const data = JSON.parse(raw);
-    return res.json(data);
+    const data = await response.json();
+    console.log("✅ Tipos de tarefa recebidos:", data.task_types);
+    return res.json(data.task_types);
   } catch (error) {
-    console.error("❌ Erro no endpoint /api/task-types:", error);
-    return res.status(500).json({ error: "Erro ao buscar tipos de tarefa" });
+    console.error("❌ Erro ao buscar tipos de tarefa:", error);
+    return res.status(500).json({ error: "Erro ao buscar tipos de tarefa", details: error });
   }
 });
-
 
 
 app.listen(PORT, () => {
