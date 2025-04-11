@@ -200,3 +200,34 @@ app.get("/api/tasks", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar tarefas", details: error });
   }
 });
+
+app.get("/api/lists/:listId", async (req, res) => {
+  const { listId } = req.params;
+  const accessToken = req.headers.authorization?.replace("Bearer ", "");
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Access token ausente" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/list/${listId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Erro ao buscar dados da lista:", errorText);
+      return res.status(response.status).json({ error: "Erro ao buscar dados da lista", details: errorText });
+    }
+
+    const data = await response.json();
+    console.log("✅ Dados da lista recebidos:", data);
+
+    return res.json(data.statuses || []);
+  } catch (error) {
+    console.error("❌ Erro inesperado ao buscar dados da lista:", error);
+    return res.status(500).json({ error: "Erro inesperado ao buscar dados da lista", details: error });
+  }
+});
