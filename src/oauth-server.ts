@@ -210,7 +210,7 @@ app.get("/api/lists/:listId/statuses", async (req, res) => {
   }
 
   try {
-    const response = await fetch(`https://api.clickup.com/api/v2/list/${listId}/status`, {
+    const response = await fetch(`https://api.clickup.com/api/v2/list/${listId}/statuses`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
