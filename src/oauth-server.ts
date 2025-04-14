@@ -232,6 +232,7 @@ app.get("/api/lists/:listId", async (req, res) => {
   }
 });
 
+
 app.get("/api/tasks/details/:taskId", async (req, res) => {
   const taskId = req.params.taskId;
   const accessToken = req.headers.authorization?.replace("Bearer ", "");
@@ -308,6 +309,7 @@ app.get("/api/tasks/details/:taskId", async (req, res) => {
         }
 
         // Os demais tipos não exigem enriquecimento
+        console.log(`🧠 Campo enriquecido: ${field.name}`, JSON.stringify(field.value, null, 2));
         return field;
       })
     );
