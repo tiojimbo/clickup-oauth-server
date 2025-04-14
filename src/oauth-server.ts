@@ -339,16 +339,18 @@ app.get("/api/fields/:fieldId", async (req, res) => {
       },
     });
 
-    if (!response.ok) throw new Error("Erro ao buscar o campo");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Erro da API ClickUp (status ${response.status}):`, errorText);
+      throw new Error("Erro ao buscar o campo");
+    }
 
     const fieldData = await response.json();
 
     console.info(`📦 Dados do campo ${fieldId}:`, JSON.stringify(fieldData, null, 2));
-
     res.json(fieldData);
   } catch (error) {
     console.error("❌ Erro ao buscar campo personalizado:", error);
     res.status(500).json({ error: "Erro ao buscar campo personalizado" });
   }
 });
-
