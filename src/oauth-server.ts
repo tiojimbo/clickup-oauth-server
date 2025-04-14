@@ -249,6 +249,7 @@ app.get("/api/tasks/details/:taskId", async (req, res) => {
 
     if (!taskResponse.ok) throw new Error("Erro ao buscar detalhes da tarefa");
     const task = await taskResponse.json();
+    console.log("📦 Tarefa carregada:", JSON.stringify(task.custom_fields, null, 2));
 
     // Enriquecer campos personalizados
     const enrichedFields = await Promise.all(
@@ -310,6 +311,7 @@ app.get("/api/tasks/details/:taskId", async (req, res) => {
 
         // Os demais tipos não exigem enriquecimento
         console.log(`🧠 Campo enriquecido: ${field.name}`, JSON.stringify(field.value, null, 2));
+        
         return field;
       })
     );
