@@ -323,3 +323,32 @@ app.get("/api/tasks/details/:taskId", async (req, res) => {
     return res.status(500).json({ error: "Erro ao buscar detalhes da tarefa" });
   }
 });
+
+app.get("/api/fields/:fieldId", async (req, res) => {
+  const fieldId = req.params.fieldId;
+  const accessToken = req.headers.authorization?.replace("Bearer ", "");
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/field/${fieldId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) throw new Error("Erro ao buscar o campo");
+
+    const fieldData = await response.json();
+
+    console.info(`📦 Dados do campo ${fieldId}:`, JSON.stringify(fieldData, null, 2));
+
+    res.json(fieldData);
+  } catch (error) {
+    console.error("❌ Erro ao buscar campo personalizado:", error);
+    res.status(500).json({ error: "Erro ao buscar campo personalizado" });
+  }
+});
+
