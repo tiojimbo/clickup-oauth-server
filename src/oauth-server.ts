@@ -231,3 +231,91 @@ app.get("/api/lists/:listId", async (req, res) => {
     return res.status(500).json({ error: "Erro inesperado ao buscar dados da lista", details: error });
   }
 });
+
+app.get("/api/tasks/details/:taskId", async (req, res) => {
+  const taskId = req.params.taskId;
+  const accessToken = req.headers.authorization?.replace("Bearer ", "");
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  try {
+    // Buscar a tarefa
+    const taskResponse = await fetch(`https://api.clickup.com/api/v2/task/${taskId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!taskResponse.ok) throw new Error("Erro ao buscar detalhes da tarefa");
+    const task = await taskResponse.json();
+
+    // Enriquecer campos personalizados
+    const enrichedFields = await Promise.all(
+      (task.custom_fields || []).map(async (field: any) => {
+        const type = field.type;
+
+        // Enriquecimento de campos com opções (dropdown, label)
+        if (["dropdown", "drop_down", "label", "labels"].includes(type)) {
+          try {
+            const defResponse = await fetch(`https://api.clickup.com/api/v2/field/${field.id}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            const def = await defResponse.json();
+            const options = def?.type_config?.options || [];
+
+            if (Array.isArray(field.value)) {
+              field.value = field.value.map((id: string) => {
+                const opt = options.find((o: any) => o.id === id || o.orderindex === id);
+                return opt ? { id, label: opt.label } : { id, label: id };
+              });
+            } else {
+              const opt = options.find((o: any) => o.id === field.value || o.orderindex === field.value);
+              field.value = opt ? { id: field.value, label: opt.label } : field.value;
+            }
+          } catch (err) {
+            console.warn(`⚠️ Falha ao enriquecer ${field.name}:`, err);
+          }
+        }
+
+        // Enriquecimento de campos de relação com tarefas
+        if (["relation", "list_relationship", "task"].includes(type)) {
+          if (Array.isArray(field.value)) {
+            field.value = await Promise.all(
+              field.value.map(async (item: any) => {
+                const id = item.id || item;
+                try {
+                  const taskRes = await fetch(`https://api.clickup.com/api/v2/task/${id}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                  });
+                  const taskData = await taskRes.json();
+                  return { id, name: taskData?.name || id };
+                } catch {
+                  return { id, name: id };
+                }
+              })
+            );
+          } else if (field.value?.id) {
+            try {
+              const taskRes = await fetch(`https://api.clickup.com/api/v2/task/${field.value.id}`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              const taskData = await taskRes.json();
+              field.value.name = taskData?.name || field.value.id;
+            } catch {
+              field.value.name = field.value.id;
+            }
+          }
+        }
+
+        // Os demais tipos não exigem enriquecimento
+        return field;
+      })
+    );
+
+    task.custom_fields = enrichedFields;
+    return res.json(task);
+  } catch (error) {
+    console.error("❌ Erro ao buscar/enriquecer detalhes da tarefa:", error);
+    return res.status(500).json({ error: "Erro ao buscar detalhes da tarefa" });
+  }
+});
