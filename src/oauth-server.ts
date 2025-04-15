@@ -154,7 +154,7 @@ app.get("/api/tasks/details/:taskId", async (req, res) => {
   }
 
   try {
-    const response = await fetch(`https://api.clickup.com/api/v2/task/${taskId}`, {
+    const response = await fetch(`https://api.clickup.com/api/v2/task/${taskId}?include_markdown_description=true`, {
       headers: {
         Authorization: accessToken,
       },
@@ -165,10 +165,13 @@ app.get("/api/tasks/details/:taskId", async (req, res) => {
     }
 
     const task = await response.json();
-    return res.json(task);
+    return res.json({...task,
+      description: task.markdown_description ?? task.description,
+    });
   } catch (error) {
     console.error("❌ Erro no endpoint /api/tasks/details/:taskId:", error);
     return res.status(500).json({ error: "Erro ao buscar detalhes da tarefa" });
+    
   }
 });
 
