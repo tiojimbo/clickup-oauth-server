@@ -354,3 +354,30 @@ app.get("/api/fields/:fieldId", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar campo personalizado" });
   }
 });
+
+app.get("/api/folders/:folderId/lists", async (req, res) => {
+  const { folderId } = req.params;
+  const accessToken = req.headers.authorization;
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/folder/${folderId}/list`, {
+      headers: {
+        Authorization: accessToken,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar listas da pasta");
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Erro backend /folders/:folderId/lists:", error);
+    res.status(500).json({ error: "Erro ao buscar listas da pasta" });
+  }
+});
