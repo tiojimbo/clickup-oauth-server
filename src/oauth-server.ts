@@ -381,3 +381,30 @@ app.get("/api/folders/:folderId/lists", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar listas da pasta" });
   }
 });
+
+app.get("/api/lists/:listId/tasks", async (req, res) => {
+  const { listId } = req.params;
+  const accessToken = req.headers.authorization;
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/list/${listId}/task?include_task_type=true`, {
+      headers: {
+        Authorization: accessToken,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar tarefas da lista");
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Erro backend /lists/:listId/tasks:", error);
+    res.status(500).json({ error: "Erro ao buscar tarefas da lista" });
+  }
+});
