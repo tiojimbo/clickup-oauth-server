@@ -408,3 +408,30 @@ app.get("/api/lists/:listId/tasks", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar tarefas da lista" });
   }
 });
+
+app.get("/api/task/:taskId", async (req, res) => {
+  const { taskId } = req.params;
+  const accessToken = req.headers.authorization;
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Access token obrigatório." });
+  }
+
+  try {
+    const response = await fetch(`https://api.clickup.com/api/v2/task/${taskId}`, {
+      headers: {
+        Authorization: accessToken,
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Erro ao buscar tarefa do ClickUp." });
+    }
+
+    const data = await response.json();
+    return res.json(data);
+  } catch (error) {
+    console.error("Erro no backend ao buscar tarefa:", error);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
